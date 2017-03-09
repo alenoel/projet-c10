@@ -1,0 +1,76 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS projetP_reset $$
+CREATE PROCEDURE projetP_reset()
+BEGIN
+	-- Lever temporairement les contraintes d'intégrité
+	SET FOREIGN_KEY_CHECKS=0;
+
+  -- Vider les tables en remettant les auto-incréments à 1
+  TRUNCATE TABLE equipe;
+  TRUNCATE TABLE equipe_projet;
+  TRUNCATE TABLE inscrit;
+  TRUNCATE TABLE membreequipe;
+  TRUNCATE TABLE personne;
+  TRUNCATE TABLE projet;
+  TRUNCATE TABLE promotion;
+
+	-- Remettre les contraintes d'integrite
+	SET FOREIGN_KEY_CHECKS=1;
+
+  -- Insérer, dans un bloc capturant d'éventuelles exceptions
+	BEGIN
+    -- Indiquer que faire si une contrainte d'intégrité est violée
+	  DECLARE EXIT HANDLER FOR SQLSTATE '23000'
+	  BEGIN
+      -- Annuler tout
+      ROLLBACK;
+      -- Afficher l'erreur
+      SHOW ERRORS;
+	END;
+
+    -- Démarrer la transaction et faire les insertions
+		START TRANSACTION;
+
+INSERT INTO  personne ( idPersonne ,  nom ,  prenom ,  mdp ,  formateur ,  etudiant ,  email ) VALUES 
+(1,"monsieur","garcon","blabla",1,0,"monsieur@vie.fr"),
+(2,"madame","fille","tintin",0,1,"madame@vie.fr"),
+(3,"etudiant","toto","blabla",0,1,"etudiant@vie.fr"),
+(4,"prof","tata","tintin",1,0,"prof@vie.fr");
+
+INSERT INTO  promotion ( idPromo ,  intitulle ) VALUES 
+(1,"2015-2016"),
+(2,"2016-2017");
+
+INSERT INTO  projet ( idProjet ,  idPromotion ,  idPersonne ,  titre ,  dateCreation ,  dateFin ,  sujet ) VALUES 
+(1,2,2,"projet java","2016-09-21","2016-12-30","jdbc"),
+(2,2,1,"projet c#","2016-05-21","2017-01-30","mode graphique"),
+(3,1,2,"projet android","2015-10-21","2016-03-02","layout");
+
+
+INSERT INTO  inscrit ( idPersonne ,  idPromo ) VALUES 
+(1, 1),
+(2, 2);
+
+INSERT INTO  equipe ( idEquipe ,  idPersonne ,  dateCreation ,  nomEquipe ) VALUES 
+(1,1,"2016-05-02","cdi"),
+(2,1,"2017-02-05","java"),
+(3,2,"2017-02-05","c#");
+
+INSERT INTO  equipe_projet ( idEquipe ,  idProjet ) VALUES 
+(1,1),
+(2,2),
+(3,2);
+
+INSERT INTO  membreequipe ( idEquipe ,  idMembreEquipe ,  idPersonne ) VALUES 
+(1,1,2),
+(1,2,1);
+
+
+    -- Valider les insertions
+    COMMIT;
+  END;
+END
+$$
+
+CALL projetP_reset()$$
